@@ -135,6 +135,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="AIComponent.h" />
+    <ClInclude Include="AITestScene.h" />
     <ClInclude Include="AnimationSet.h" />
     <ClInclude Include="AnimationState.h" />
     <ClInclude Include="AnimationTrack.h" />
@@ -186,6 +188,8 @@
     <ClInclude Include="UploadBuffer.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AIComponent.cpp" />
+    <ClCompile Include="AITestScene.cpp" />
     <ClCompile Include="AnimationSet.cpp" />
     <ClCompile Include="AnimationState.cpp" />
     <ClCompile Include="AnimationTrack.cpp" />

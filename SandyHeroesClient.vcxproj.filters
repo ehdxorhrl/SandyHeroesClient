@@ -109,6 +109,12 @@
     <Filter Include="7.Component\Collider">
       <UniqueIdentifier>{0198f9e0-0727-40a1-90c2-86ef339f8ce0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="7.Component\AI">
+      <UniqueIdentifier>{a54fd5ff-2c5a-40e9-9020-ade8a203faea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2.Scene\AITestScene">
+      <UniqueIdentifier>{e02fbb8c-4db0-40f6-87be-a6116dfd628d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="targetver.h">
@@ -258,6 +264,12 @@
     <ClInclude Include="UIShader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="AITestScene.h">
+      <Filter>2.Scene\AITestScene</Filter>
+    </ClInclude>
+    <ClInclude Include="AIComponent.h">
+      <Filter>7.Component\AI</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="SandyHeroesClient.cpp">
@@ -391,6 +403,12 @@
     </ClCompile>
     <ClCompile Include="UIShader.cpp">
       <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AITestScene.cpp">
+      <Filter>2.Scene\AITestScene</Filter>
+    </ClCompile>
+    <ClCompile Include="AIComponent.cpp">
+      <Filter>7.Component\AI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
