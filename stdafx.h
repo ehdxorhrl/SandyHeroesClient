@@ -5,10 +5,16 @@
 #pragma once
 
 #include "targetver.h"
+#include "Packet.h"
 #define WIN32_LEAN_AND_MEAN             // 거의 사용되지 않는 내용을 Windows 헤더에서 제외합니다.
 #define NOMINMAX						// min, max 메크로를 사용하지 않음
 // Windows 헤더 파일
 #include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+
+#pragma comment (lib, "WS2_32.lib")
+#pragma comment (lib, "MSWSock.lib")
 // C 런타임 헤더 파일입니다.
 #include <stdlib.h>
 #include <malloc.h>
@@ -46,7 +52,6 @@
 #pragma comment(lib, "dxguid.lib")
 
 #include "d3dx12.h"
-#include <DirectXMath.h>
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;

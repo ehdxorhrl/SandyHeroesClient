@@ -43,6 +43,9 @@ public:
 	DescriptorManager* descriptor_manager() const;
 	HWND main_wnd() const;
 
+	//서버 연결
+	void ConnectServer();
+
 
 private:
 	static GameFramework* kGameFramework;
@@ -101,6 +104,8 @@ private:
 	std::unique_ptr<FrameResourceManager> frame_resource_manager_ = nullptr;
 	std::unique_ptr<DescriptorManager> descriptor_manager_ = nullptr;
 	std::unique_ptr<InputManager> input_manager_ = nullptr;
+private:
+	SOCKET socket_;
 
 };
 

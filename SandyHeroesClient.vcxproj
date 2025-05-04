@@ -166,6 +166,7 @@
     <ClInclude Include="MeshComponent.h" />
     <ClInclude Include="ModelInfo.h" />
     <ClInclude Include="Object.h" />
+    <ClInclude Include="Packet.h" />
     <ClInclude Include="PlayerAnimationState.h" />
     <ClInclude Include="UIMesh.h" />
     <ClInclude Include="Resource.h" />

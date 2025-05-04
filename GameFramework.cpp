@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "GameFramework.h"
+#include "Packet.h"
 #include "Timer.h"
 #include "Object.h"
 #include "Shader.h"
@@ -552,4 +553,20 @@ DescriptorManager* GameFramework::descriptor_manager() const
 HWND GameFramework::main_wnd() const
 {
     return main_wnd_;
+}
+
+void GameFramework::ConnectServer()
+{
+    WSADATA WSAData;
+    WSAStartup(MAKEWORD(2, 0), &WSAData);
+
+    socket_ = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, 0);
+    SOCKADDR_IN addr;
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(SERVER_PORT);
+    inet_pton(AF_INET, SERVER_ADDR, &addr.sin_addr);
+    int ref = WSAConnect(socket_, reinterpret_cast<sockaddr*>(&addr),
+        sizeof(SOCKADDR_IN), NULL, NULL, NULL, NULL);
+    if(ref == SOCKET_ERROR)
+        PostQuitMessage(0);
 }
