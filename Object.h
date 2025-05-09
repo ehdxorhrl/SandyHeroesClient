@@ -53,6 +53,7 @@ public:
 
 	void set_name(const std::string& value);
 	void set_velocity(const XMFLOAT3& value);
+	void set_id(const long long id);
 
 	void set_is_ground(bool on_ground);
 	

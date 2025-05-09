@@ -161,7 +161,6 @@ void BaseScene::BuildObject(ID3D12Device* device, ID3D12GraphicsCommandList* com
 
 	//모델 오브젝트 배치
 	Object* player = model_infos_[0]->GetInstance();
-	player->set_position_vector(XMFLOAT3{ 0, 30, 0 });
 	AnimatorComponent* animator = Object::GetComponent<AnimatorComponent>(player);
 	animator->set_animation_state(new PlayerAnimationState);
 
@@ -187,7 +186,7 @@ void BaseScene::BuildObject(ID3D12Device* device, ID3D12GraphicsCommandList* com
 	player_gun->LoadGunInfo("specter");
 	player_gun_frame->AddComponent(player_gun);
 	player_gun_frame->Rotate(0, 170, -17);
-	//player_gun_frame->Scale(3);
+	player_gun_frame->Scale(3);
 
 	//카메라 설정
 	Object* camera_object = new Object();
@@ -204,7 +203,6 @@ void BaseScene::BuildObject(ID3D12Device* device, ID3D12GraphicsCommandList* com
 	//씬 리스트에 추가
 	object_list_.emplace_back();
 	object_list_.back().reset(player);
-
 
 	camera_object = new Object;
 	camera_object->set_name("CAMERA_2");
@@ -452,4 +450,7 @@ void BaseScene::PrepareGroundChecking()
 	}
 	is_prepare_ground_checking_ = true;
 }
+
+
+
 

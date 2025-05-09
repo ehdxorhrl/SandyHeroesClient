@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "Object.h"
 #include "User.h"
 #include "SessionManager.h"
 
@@ -6,10 +7,10 @@ Session::Session() {
 	std::cout << "DEFAULT SESSION CONSTRUCTOR CALLED!!\n";
 	exit(-1);
 }
-Session::Session(long long session_id, SOCKET s) : id_(session_id), c_socket_(s)
+Session::Session(long long session_id, SOCKET s)
+	: id_(session_id), c_socket_(s)
 {
 	remained_ = 0;
-	do_recv();
 }
 Session::~Session()
 {
@@ -59,8 +60,10 @@ void Session::send_player_info_packet()
 	p.size = sizeof(p);
 	p.type = S2C_P_USER_INFO;
 	p.id = id_;
-	p.x = x_;
-	p.y = y_;
+	p.x = object_.position_vector().x;
+	p.y = object_.position_vector().y;
+	p.z = object_.position_vector().z;
+
 	do_send(&p);
 }
 
@@ -70,22 +73,22 @@ void Session::send_player_position()
 	p.size = sizeof(p);
 	p.type = S2C_P_MOVE;
 	p.id = id_;
-	p.x = x_;
-	p.y = y_;
+	p.x = object_.position_vector().x;
+	p.y = object_.position_vector().y;
+	p.z = object_.position_vector().z;
 	do_send(&p);
 }
 
 void Session::process_packet(unsigned char* p)
 {
 	const unsigned char packet_type = p[1];
+	static int _z = 0;
 	switch (packet_type) {
 	case C2S_P_LOGIN:
 	{
 		cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
-		name_ = packet->name;
-		x_ = 4;
-		y_ = 4;
-		z_ = 0;
+		object_.set_position_vector(0, 10, _z);
+		_z += 10;
 		send_player_info_packet();
 	
 		sc_packet_enter ep;
@@ -94,9 +97,9 @@ void Session::process_packet(unsigned char* p)
 		ep.id = id_;
 		strcpy_s(ep.name, name_.c_str());
 		ep.o_type = 0;
-		ep.x = x_;
-		ep.y = y_;
-		ep.z = z_;
+		ep.x = object_.world_position_vector().x;
+		ep.y = object_.world_position_vector().y;
+		ep.z = object_.world_position_vector().z;
 		
 		const auto& users = SessionManager::getInstance().getAllSessions();
 		for (auto& u : users) {
@@ -112,9 +115,9 @@ void Session::process_packet(unsigned char* p)
 				ep.id = u.first;
 				strcpy_s(ep.name, u.second->name_.c_str());
 				ep.o_type = 0;
-				ep.x = u.second->x_;
-				ep.y = u.second->y_;
-				ep.z = u.second->z_;
+				ep.x = u.second->object_.world_position_vector().x;
+				ep.y = u.second->object_.world_position_vector().y;
+				ep.z = u.second->object_.world_position_vector().z;
 				do_send(&ep);
 			}
 		}
@@ -122,45 +125,46 @@ void Session::process_packet(unsigned char* p)
 	}
 	case C2S_P_KEYBOARD_INPUT: {
 		//cs_packet_keyboard_input* packet = reinterpret_cast<cs_packet_keyboard_input*>(p);
-		//switch (packet->direction) {
-		//case MOVE_UP: if (_y > 0) _y = _y - 1; break;
-		//case MOVE_DOWN: if (_y < (MAP_HEIGHT - 1)) _y = _y + 1; break;
-		//case MOVE_LEFT: if (_x > 0) _x = _x - 1; break;
-		//case MOVE_RIGHT: if (_x < (MAP_WIDTH - 1)) _x = _x + 1; break;
-		//}
 		//
 		//sc_packet_move mp;
 		//mp.size = sizeof(mp);
 		//mp.type = S2C_P_MOVE;
-		//mp.id = _id;
-		//mp.x = _x;
-		//mp.y = _y;
-		//for (auto& u : g_users) {
-		//	u.second.do_send(&mp);
+		//mp.id = id_;
+		//mp.x = object_.world_position_vector().x;
+		//mp.y = object_.world_position_vector().y;
+		//mp.z = object_.world_position_vector().z;
+		//
+		//const auto& users = SessionManager::getInstance().getAllSessions();
+		//for (auto& u : users) {
+		//	u.second->do_send(&mp);
 		//}
 		//break;
 	}
 
-	//case C2S_P_MOUSE_MOVE: {
-	//	cs_packet_mouse_move* packet = reinterpret_cast<cs_packet_mouse_move*>(p);
-	//	switch (packet->direction) {
-	//	case MOVE_UP: if (_y > 0) _y = _y - 1; break;
-	//	case MOVE_DOWN: if (_y < (MAP_HEIGHT - 1)) _y = _y + 1; break;
-	//	case MOVE_LEFT: if (_x > 0) _x = _x - 1; break;
-	//	case MOVE_RIGHT: if (_x < (MAP_WIDTH - 1)) _x = _x + 1; break;
-	//	}
-	//
-	//	sc_packet_move mp;
-	//	mp.size = sizeof(mp);
-	//	mp.type = S2C_P_MOVE;
-	//	mp.id = _id;
-	//	mp.x = _x;
-	//	mp.y = _y;
-	//	for (auto& u : g_users) {
-	//		u.second.do_send(&mp);
-	//	}
-	//	break;
-	//}
+	case C2S_P_MOUSE_MOVE: {
+
+		cs_packet_mouse_move* packet = reinterpret_cast<cs_packet_mouse_move*>(p);
+		object_.Rotate(static_cast<float>(packet->dy) * 0.1f,
+			static_cast<float>(packet->dx) * 0.1f,
+			0.f);
+
+		sc_packet_rotate rot;
+		rot.size = sizeof(rot);
+		rot.type = S2C_P_ROTATE;
+		rot.id = id_;
+		rot.look_x = object_.world_look_vector().x;
+		rot.look_y = object_.world_look_vector().y;
+		rot.look_z = object_.world_look_vector().z;
+		rot.up_x = object_.world_up_vector().x;
+		rot.up_y = object_.world_up_vector().y;
+		rot.up_z = object_.world_up_vector().z;
+
+		const auto& users = SessionManager::getInstance().getAllSessions();
+		for (auto& u : users) {
+			u.second->do_send(&rot);
+		}
+		break;
+	}
 	default:
 		std::cout << "Error Invalid Packet Type\n";
 		exit(-1);

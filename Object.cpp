@@ -180,6 +180,11 @@ void Object::set_velocity(const XMFLOAT3& value)
 	velocity_ = value;
 }
 
+void Object::set_id(const long long id)
+{
+	id_ = id;
+}
+
 void Object::set_is_ground(bool is_ground)
 {
 	is_ground_ = is_ground;

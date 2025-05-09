@@ -23,9 +23,11 @@ public:
 
 	virtual bool ProcessInput(UINT id, WPARAM w_param, LPARAM l_param, float time) override;
 
+	void AddRemotePlayer(int id, const std::string& name, const XMFLOAT3& pos);
+
+	Object* player() const { return player_; }
 
 private:
 	Object* player_ = nullptr;
-	Object* monster_ = nullptr;
 };
 

@@ -1,13 +1,11 @@
-#include "stdafx.h"
+ï»¿#include "stdafx.h"
 #include "User.h"
 #include "GameFramework.h"
 #include "SessionManager.h"
 #include "Packet.h"
 #include "Timer.h"
-
 //#include "Object.h"
 //#include "TestScene.h"
-
 
 GameFramework* GameFramework::kGameFramework = nullptr;
 
@@ -20,6 +18,8 @@ GameFramework::GameFramework()
 
 GameFramework::~GameFramework()
 {
+    for (auto& w : workers_)
+        w.join();
     closesocket(socket_);
     WSACleanup();
 }
@@ -30,7 +30,7 @@ void GameFramework::Initialize()
     WSAStartup(MAKEWORD(2, 0), &WSAData);
 
     socket_ = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
-    if (socket_ <= 0) std::cout << "ERRPR" << "¿øÀÎ";
+    if (socket_ <= 0) std::cout << "ERRPR" << "ì›ì¸";
     else std::cout << "Socket Created.\n";
 
     SOCKADDR_IN addr;
@@ -45,72 +45,55 @@ void GameFramework::Initialize()
 
     do_accept(socket_, &accept_over_);
 
-    //do_accept(socket_, &accept_over_);
-
-    //¾À »ı¼º ¹× ÃÊ±âÈ­
+    //ì”¬ ìƒì„± ë° ì´ˆê¸°í™”
     //scene_ = std::make_unique<BaseScene>();
-    //scene_->Initialize(d3d_device_.Get(), d3d_command_list_.Get(), d3d_root_signature_.Get(),
-    //    this);
-
-    client_timer_.reset(new Timer);
-    client_timer_->Reset();
-}
-
-void GameFramework::ProcessInput()
-{
-    //while (!input_manager_->IsEmpty())
-    //{
-    //    InputMessage message = input_manager_->DeQueueInputMessage(client_timer_->PlayTime());
-    //    ProcessInput(message.id, message.w_param, message.l_param, message.time);
-    //}
-}
-
-//void GameFramework::ProcessInput()
-//{
-//    //¸ÕÀú Scene¿¡¼­ ÀÎÇ²À» Ã³¸®ÇÏ´ÂÁö È®ÀÎÇÑ´Ù
-//    //if (scene_)
-//    //{
-//    //    if (scene_->ProcessInput(id, w_param, l_param, time))
-//    //        return;
-//    //}
-//}
-
-void GameFramework::FrameAdvance()
-{
-    client_timer_->Tick();
+    //scene_->Initialize(this);
+    
+    server_timer_.reset(new Timer);
+    server_timer_->Reset();
 
     auto num_core = std::thread::hardware_concurrency();
 
-    std::vector <std::thread> workers;
-
     for (unsigned int i = 0; i < num_core; ++i)
-        workers.emplace_back([this] {
+        workers_.emplace_back([this] {
         this->worker();
             });
-    for (auto& w : workers)
-        w.join();
-    //ÀÎÇ² Ã³¸®
-    //ProcessInput();
-
-    //Ãæµ¹Ã³¸®
-    //scene_->CheckObjectByObjectCollisions();
-
-    //¾÷µ¥ÀÌÆ®
-    //scene_->Update(client_timer_->ElapsedTime());
-    //scene_->UpdateObjectWorldMatrix();
-
 }
 
+void GameFramework::FrameAdvance()
+{
+    server_timer_->Tick();
+
+    //ì¸í’‹ ì²˜ë¦¬
+    ProcessInput();
+
+    //ì¶©ëŒì²˜ë¦¬
+    //scene_->CheckObjectByObjectCollisions();
+
+    //ì—…ë°ì´íŠ¸
+    //scene_->Update(server_timer_->ElapsedTime());
+    //scene_->UpdateObjectWorldMatrix();
+}
 
 void GameFramework::do_accept(SOCKET s_socket, EXP_OVER* accept_over)
 {
     SOCKET c_socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
     accept_over->accept_socket_ = c_socket;
+    accept_over->io_op_ = IO_ACCEPT;
     AcceptEx(s_socket, c_socket, accept_over->buffer_, 0,
         sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16,
         NULL, &accept_over->over_);
 }
 
+void GameFramework::ProcessInput()
+{
+    //ë¨¼ì € Sceneì—ì„œ ì¸í’‹ì„ ì²˜ë¦¬í•˜ëŠ”ì§€ í™•ì¸í•œë‹¤
+    //if (scene_)
+    //{
+    //    if (scene_->ProcessInput(id, w_param, l_param, time))
+    //        return;
+    //}
+}
 
 void GameFramework::worker()
 {
@@ -137,13 +120,25 @@ void GameFramework::worker()
 		switch (eo->io_op_) {
 		case IO_ACCEPT:
 		{
-			int new_id = new_id_++;
-			CreateIoCompletionPort(reinterpret_cast<HANDLE>(eo->accept_socket_),
-				hIOCP_, new_id, 0);
+            int new_id = new_id_++;
 
-			SessionManager::getInstance().add(new_id, std::make_shared<Session>(new_id, eo->accept_socket_));
+            // ì†Œì¼“ì„ IOCPì— ë“±ë¡
+            CreateIoCompletionPort(reinterpret_cast<HANDLE>(eo->accept_socket_),
+                hIOCP_, new_id, 0);
 
-			do_accept(socket_, &accept_over_);
+            // â— AcceptExë¡œ ë°›ì€ ì†Œì¼“ì— ëŒ€í•´ ì»¨í…ìŠ¤íŠ¸ ì—…ë°ì´íŠ¸
+            setsockopt(eo->accept_socket_, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                (char*)&socket_, sizeof(socket_));
+
+            // ì„¸ì…˜ ìƒì„± ë° ë“±ë¡
+            auto session = std::make_shared<Session>(new_id, eo->accept_socket_);
+            SessionManager::getInstance().add(new_id, session);
+
+            // ì´ì œ ì•ˆì „í•˜ê²Œ ìˆ˜ì‹  ì‹œì‘ ê°€ëŠ¥
+            session->do_recv();
+
+            // ë‹¤ìŒ í´ë¼ì´ì–¸íŠ¸ ìˆ˜ì‹  ëŒ€ê¸°
+            do_accept(socket_, &accept_over_);
 		}
 		break;
 		case IO_SEND:
@@ -153,8 +148,8 @@ void GameFramework::worker()
         {
             auto session = SessionManager::getInstance().get(static_cast<int>(key));
             if (!session) {
-                // ¼¼¼ÇÀÌ ¾øÀ¸¸é ±×³É ¹«½Ã
-                delete eo;  // EXP_OVER ÇØÁ¦ (ÇÊ¿äÇÏ¸é)
+                // ì„¸ì…˜ì´ ì—†ìœ¼ë©´ ê·¸ëƒ¥ ë¬´ì‹œ
+                delete eo;  // EXP_OVER í•´ì œ (í•„ìš”í•˜ë©´)
                 break;
             }
 
@@ -176,8 +171,6 @@ void GameFramework::worker()
             else {
                 session->remained_ = 0;
             }
-
-            delete eo;  // EXP_OVER ÇØÁ¦
             session->do_recv();
         }
         break;

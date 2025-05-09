@@ -19,11 +19,23 @@
     <Filter Include="0.GameFramework\Timer">
       <UniqueIdentifier>{bed15316-310d-49b1-8a95-33f7d6e37372}</UniqueIdentifier>
     </Filter>
-    <Filter Include="User">
-      <UniqueIdentifier>{4a8154a5-57b9-43b6-a9d1-effd868fcd89}</UniqueIdentifier>
-    </Filter>
     <Filter Include="1.Manager">
       <UniqueIdentifier>{0c896eae-9fae-4042-93c7-23ed579efab6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="1.Manager\SessionManager">
+      <UniqueIdentifier>{c5a6adb1-d6de-410b-b2a1-69be4f9a33f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="1.Manager\SessionManager\User">
+      <UniqueIdentifier>{4a8154a5-57b9-43b6-a9d1-effd868fcd89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2.Scene">
+      <UniqueIdentifier>{25ffaecb-2005-4716-aa86-141ebc72b4f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="3.Object">
+      <UniqueIdentifier>{d150b7c6-3f0c-4c10-9ae4-e7238b211153}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="2.Scene\BaseScene">
+      <UniqueIdentifier>{1dbd92e0-a334-4f78-a96c-372328056e24}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -45,10 +57,19 @@
       <Filter>0.GameFramework\Timer</Filter>
     </ClInclude>
     <ClInclude Include="User.h">
-      <Filter>User</Filter>
+      <Filter>1.Manager\SessionManager\User</Filter>
     </ClInclude>
     <ClInclude Include="SessionManager.h">
-      <Filter>1.Manager</Filter>
+      <Filter>1.Manager\SessionManager</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene.h">
+      <Filter>2.Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Object.h">
+      <Filter>3.Object</Filter>
+    </ClInclude>
+    <ClInclude Include="BaseScene.h">
+      <Filter>2.Scene\BaseScene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -62,10 +83,19 @@
       <Filter>0.GameFramework\Timer</Filter>
     </ClCompile>
     <ClCompile Include="User.cpp">
-      <Filter>User</Filter>
+      <Filter>1.Manager\SessionManager\User</Filter>
     </ClCompile>
     <ClCompile Include="SessionManager.cpp">
-      <Filter>1.Manager</Filter>
+      <Filter>1.Manager\SessionManager</Filter>
+    </ClCompile>
+    <ClCompile Include="Scene.cpp">
+      <Filter>2.Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Object.cpp">
+      <Filter>3.Object</Filter>
+    </ClCompile>
+    <ClCompile Include="BaseScene.cpp">
+      <Filter>2.Scene\BaseScene</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

@@ -7,6 +7,9 @@
 
 #define MAX_LOADSTRING 100
 
+#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
+#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
 WCHAR szTitle[MAX_LOADSTRING];                  // 제목 표시줄 텍스트입니다.
@@ -26,7 +29,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPWSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
-    game_framework.ConnectServer();
+
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -43,9 +46,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
     HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_SANDYHEROESCLIENT));
 
-    MSG msg;
 
-    game_framework.Initialize(hInst, hWnd);
+    game_framework.Initialize(hInstance, hWnd);
+
+    game_framework.ConnectServer();
+    game_framework.send_login_packet();
+    
+    MSG msg;
 
     while (1)
     {
@@ -141,19 +148,35 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (message == WM_KEYDOWN || message == WM_KEYUP)
+    {
+        cs_packet_keyboard_input packet{};
+        packet.size = sizeof(packet);
+        packet.type = C2S_P_KEYBOARD_INPUT;
+        packet.key = static_cast<unsigned char>(wParam);
+        packet.pressed = (message == WM_KEYDOWN) ? 1 : 0;
+        game_framework.do_send(&packet);
+    }
+    else if (message == WM_MOUSEMOVE)
+    {
+        static POINT last_mouse_pos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+        int curr_x = GET_X_LPARAM(lParam);
+        int curr_y = GET_Y_LPARAM(lParam);
+        int dx = curr_x - last_mouse_pos.x;
+        int dy = curr_y - last_mouse_pos.y;
+        last_mouse_pos.x = curr_x;
+        last_mouse_pos.y = curr_y;
+
+        cs_packet_mouse_move packet{};
+        packet.size = sizeof(packet);
+        packet.type = C2S_P_MOUSE_MOVE;
+        packet.dx = dx;
+        packet.dy = dy;
+        game_framework.do_send(&packet);
+    }
+
     switch (message)
     {
-    case WM_SIZE:
-    case WM_LBUTTONDOWN:
-    case WM_LBUTTONUP:
-    case WM_MOUSEMOVE:
-    case WM_RBUTTONDOWN:
-    case WM_RBUTTONUP:
-    case WM_KEYDOWN:
-    case WM_KEYUP:
-        game_framework.ProcessWindowMessage(hWnd, message, wParam, lParam);
-
-        break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);

@@ -7,6 +7,21 @@ class FrameResourceManager;
 class DescriptorManager;
 class InputManager;
 
+struct EXP_OVER
+{
+	WSAOVERLAPPED over = {};
+	WSABUF wsa_buf = {};
+	char buffer[MAX_PATH] = {}; // 크기 넉넉하게
+	DWORD flags = 0;
+
+	EXP_OVER()
+	{
+		ZeroMemory(&over, sizeof(over));
+		wsa_buf.buf = buffer;
+		wsa_buf.len = sizeof(buffer);
+	}
+};
+
 class GameFramework
 {
 public:
@@ -42,10 +57,19 @@ public:
 	FrameResourceManager* frame_resource_manager() const;
 	DescriptorManager* descriptor_manager() const;
 	HWND main_wnd() const;
+	SOCKET socket() const; // 소켓용
 
 	//서버 연결
 	void ConnectServer();
-
+	//패킷 전송
+	void send_login_packet();
+	void send_mouse_move_packet();
+	void send_keyboard_input_packet();
+	void ProcessPacket(char* p);
+	void do_recv();
+	void CheckRecv();
+	void do_send(void* p);
+	
 
 private:
 	static GameFramework* kGameFramework;
@@ -104,8 +128,11 @@ private:
 	std::unique_ptr<FrameResourceManager> frame_resource_manager_ = nullptr;
 	std::unique_ptr<DescriptorManager> descriptor_manager_ = nullptr;
 	std::unique_ptr<InputManager> input_manager_ = nullptr;
+
+	bool is_initialized_ = false;
 private:
 	SOCKET socket_;
-
+	long long id_;
+	EXP_OVER recv_over_;
 };
 

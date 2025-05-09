@@ -128,6 +128,20 @@ Object* Scene::FindObject(const std::string& object_name)
 	return nullptr;
 }
 
+Object* Scene::FindObject(const long long id)
+{
+	auto it = std::find_if(object_list_.begin(), object_list_.end(), [&id](const std::unique_ptr<Object>& object) {
+		return object.get()->id() == id;
+		});
+
+	if (it != object_list_.end())
+	{
+		return (*it).get();
+	}
+
+	return nullptr;
+}
+
 ModelInfo* Scene::FindModelInfo(const std::string& name)
 {
 	auto it = std::find_if(model_infos_.begin(), model_infos_.end(), [&name](const std::unique_ptr<ModelInfo>& object) {

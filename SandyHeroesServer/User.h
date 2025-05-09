@@ -1,4 +1,5 @@
 #pragma once
+#include "Object.h"
 
 class EXP_OVER
 {
@@ -22,13 +23,11 @@ class Session {
 private:
 	SOCKET			c_socket_;
 	long long		id_;
-
-	EXP_OVER		recv_over_{ IO_RECV };
-	
-
-	float			x_, y_, z_;
 	std::string		name_;
 
+	EXP_OVER		recv_over_{ IO_RECV };
+
+	Object			object_;
 public:
 	Session();
 	Session(long long session_id, SOCKET s);

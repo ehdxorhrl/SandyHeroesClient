@@ -1,5 +1,6 @@
-#pragma once
+ï»¿#pragma once
 #include "Scene.h"
+#include "ColliderComponent.h"
 
 class MeshColliderComponent;
 
@@ -17,21 +18,22 @@ public:
 
 	virtual void Update(float elapsed_time) override;
 
-	//TODO: ´ÜÀÏ ÇÃ·¹ÀÌ¾î »Ó¸¸ ¾Æ´Ï¶ó Àû, ´Ù¸¥ ÇÃ·¹ÀÌ¾î¿¡ ´ëÇÑ ground Ã¼Å©µµ ÇÊ¿ä
+	//TODO: ë‹¨ì¼ í”Œë ˆì´ì–´ ë¿ë§Œ ì•„ë‹ˆë¼ ì , ë‹¤ë¥¸ í”Œë ˆì´ì–´ì— ëŒ€í•œ ground ì²´í¬ë„ í•„ìš”
 	void CheckPlayerIsGround();
 
-	void PrepareGroundChecking();	//¸Ê ¹Ù´ÚÃ¼Å©¸¦ À§ÇÑ »çÀü ÀÛ¾÷
+	void PrepareGroundChecking();	//ë§µ ë°”ë‹¥ì²´í¬ë¥¼ ìœ„í•œ ì‚¬ì „ ì‘ì—…
 
+	Object* player() const { return player_; }
 private:
-	//TODO: Player °´Ã¼ ±¸Çö
+	//TODO: Player ê°ì²´ êµ¬í˜„
 	Object* player_ = nullptr;
 
-	static constexpr int kStageMaxCount{ 8 };	// °ÔÀÓ ½ºÅ×ÀÌÁö ÃÑ °³¼ö
+	static constexpr int kStageMaxCount{ 8 };	// ê²Œì„ ìŠ¤í…Œì´ì§€ ì´ ê°œìˆ˜
 	bool is_prepare_ground_checking_ = false;
-	std::array<std::list<MeshColliderComponent*>, kStageMaxCount> checking_maps_mesh_collider_list_;	//¸Ê ¹Ù´ÚÃ¼Å©¸¦ À§ÇÑ ¸Ş½¬ Äİ¶óÀÌ´õ ¸®½ºÆ® ¹è¿­
-	int stage_clear_num_{ 0 };	// ÇÃ·¹ÀÌ¾îÀÇ ½ºÅ×ÀÌÁö ÁøÇàµµ
+	std::array<std::list<MeshColliderComponent*>, kStageMaxCount> checking_maps_mesh_collider_list_;	//ë§µ ë°”ë‹¥ì²´í¬ë¥¼ ìœ„í•œ ë©”ì‰¬ ì½œë¼ì´ë” ë¦¬ìŠ¤íŠ¸ ë°°ì—´
+	int stage_clear_num_{ 0 };	// í”Œë ˆì´ì–´ì˜ ìŠ¤í…Œì´ì§€ ì§„í–‰ë„
 
-	bool is_render_debug_mesh_ = false;	//µğ¹ö±×¿ë ¿ÍÀÌ¾îÇÁ·¹ÀÓ obb¸¦ ·»´õÇÏ´ÂÁö ¿©ºÎ
+	bool is_render_debug_mesh_ = false;	//ë””ë²„ê·¸ìš© ì™€ì´ì–´í”„ë ˆì„ obbë¥¼ ë Œë”í•˜ëŠ”ì§€ ì—¬ë¶€
 
 };
 

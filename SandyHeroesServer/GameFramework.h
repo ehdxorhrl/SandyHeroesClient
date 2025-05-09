@@ -23,9 +23,10 @@ private:
 	static GameFramework* kGameFramework;
 	HANDLE hIOCP_;
 	SOCKET socket_;
-	std::unique_ptr<Timer> client_timer_;
+	std::unique_ptr<Timer> server_timer_;
 	std::atomic<int> new_id_ = 0;
 	EXP_OVER accept_over_{ IO_ACCEPT };
+	std::vector <std::thread> workers_;
 	//std::unique_ptr<Scene> scene_ = nullptr;
 
 };

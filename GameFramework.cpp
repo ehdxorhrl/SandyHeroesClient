@@ -4,7 +4,7 @@
 #include "Timer.h"
 #include "Object.h"
 #include "Shader.h"
-#include "TestScene.h"
+#include "AITestScene.h"
 #include "FrameResourceManager.h"
 #include "DescriptorManager.h"
 #include "Mesh.h"
@@ -30,6 +30,8 @@ GameFramework::~GameFramework()
     {
         FlushCommandQueue();
     }
+    closesocket(socket_);
+    WSACleanup();
 }
 
 void GameFramework::Initialize(HINSTANCE hinstance, HWND hwnd)
@@ -50,7 +52,7 @@ void GameFramework::Initialize(HINSTANCE hinstance, HWND hwnd)
     input_manager_ = std::make_unique<InputManager>();
 
     //씬 생성 및 초기화
-    scene_ = std::make_unique<BaseScene>();
+    scene_ = std::make_unique<AITestScene>();
     scene_->Initialize(d3d_device_.Get(), d3d_command_list_.Get(), d3d_root_signature_.Get(), 
         this);
 
@@ -372,21 +374,15 @@ void GameFramework::OnResize()
 
 void GameFramework::ProcessInput()
 {
-    while (!input_manager_->IsEmpty())
-    {
-        InputMessage message = input_manager_->DeQueueInputMessage(client_timer_->PlayTime());
-        ProcessInput(message.id, message.w_param, message.l_param, message.time);
-    }
+    //while (!input_manager_->IsEmpty())
+    //{
+    //    InputMessage message = input_manager_->DeQueueInputMessage(client_timer_->PlayTime());
+    //    ProcessInput(message.id, message.w_param, message.l_param, message.time);
+    //}
 }
 
 void GameFramework::ProcessInput(UINT id, WPARAM w_param, LPARAM l_param, float time)
 {
-    //먼저 Scene에서 인풋을 처리하는지 확인한다
-    if (scene_)
-    {
-        if (scene_->ProcessInput(id, w_param, l_param, time))
-            return;
-    }
     switch (id)
     {
     case WM_KEYDOWN:
@@ -400,7 +396,7 @@ void GameFramework::ProcessInput(UINT id, WPARAM w_param, LPARAM l_param, float 
 
             d3d_command_list_->Reset(d3d_command_allocator_.Get(), nullptr);
 
-            scene_ = std::make_unique<BaseScene>();
+            scene_ = std::make_unique<AITestScene>();
             scene_->Initialize(d3d_device_.Get(), d3d_command_list_.Get(), d3d_root_signature_.Get(),
                 this);
 
@@ -433,6 +429,7 @@ void GameFramework::FrameAdvance()
     scene_->Update(client_timer_->ElapsedTime());
     scene_->UpdateObjectWorldMatrix();
 
+    CheckRecv();
 
     //렌더
     auto& command_allocator = frame_resource_manager_->curr_frame_resource()->d3d_allocator;
@@ -555,18 +552,146 @@ HWND GameFramework::main_wnd() const
     return main_wnd_;
 }
 
+SOCKET GameFramework::socket() const
+{
+    return socket_;
+}
+
 void GameFramework::ConnectServer()
 {
-    WSADATA WSAData;
-    WSAStartup(MAKEWORD(2, 0), &WSAData);
+    WSADATA wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-    socket_ = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, 0);
-    SOCKADDR_IN addr;
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(SERVER_PORT);
-    inet_pton(AF_INET, SERVER_ADDR, &addr.sin_addr);
-    int ref = WSAConnect(socket_, reinterpret_cast<sockaddr*>(&addr),
-        sizeof(SOCKADDR_IN), NULL, NULL, NULL, NULL);
-    if(ref == SOCKET_ERROR)
-        PostQuitMessage(0);
+    socket_ = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, NULL, WSA_FLAG_OVERLAPPED);
+
+    SOCKADDR_IN serverAddr;
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(SERVER_PORT);
+    inet_pton(AF_INET, SERVER_ADDR, &serverAddr.sin_addr);
+
+    int result = WSAConnect(socket_, (SOCKADDR*)&serverAddr, sizeof(serverAddr), NULL, NULL, NULL, NULL);
+
+    do_recv();
+}
+
+
+void GameFramework::do_send(void* p)
+{
+    unsigned char* packet = reinterpret_cast<unsigned char*>(p);
+    int packet_size = packet[0];
+
+    WSABUF buf;
+    buf.buf = reinterpret_cast<CHAR*>(packet);
+    buf.len = packet_size;
+
+    DWORD sent = 0;
+    WSASend(socket_, &buf, 1, &sent, 0, nullptr, nullptr);
+}
+
+void GameFramework::send_login_packet()
+{
+    // 로비없이 바로 인게임 테스트(나중에 변경 및 삭제)
+    cs_packet_login p;
+    p.size = sizeof(p);
+    p.type = C2S_P_LOGIN;
+    do_send(&p);
+}
+
+
+void GameFramework::ProcessPacket(char* p)
+{
+    static bool first_time = true;
+    switch (p[1])
+    {
+    case S2C_P_USER_INFO:
+    {
+        sc_packet_user_info* packet = reinterpret_cast<sc_packet_user_info*>(p);
+        AITestScene* ai_test_scene = dynamic_cast<AITestScene*>(scene_.get());
+        if (ai_test_scene)
+        {
+            Object* player = ai_test_scene->player(); // BaseScene에 player_ 멤버가 존재함
+            if (player)
+            {
+                player->set_position_vector(packet->x, packet->y, packet->z);
+                player->set_id(packet->id);
+            }
+        }
+    }
+    break;
+
+    case S2C_P_MOVE:
+    {
+        sc_packet_move* packet = reinterpret_cast<sc_packet_move*>(p);
+    }
+    break;
+    case S2C_P_ROTATE:
+    {
+        sc_packet_rotate* packet = reinterpret_cast<sc_packet_rotate*>(p);
+        AITestScene* ai_test_scene = dynamic_cast<AITestScene*>(scene_.get());
+        Object* player = ai_test_scene->player(); // BaseScene에 player_ 멤버가 존재함
+        if (player)
+        {
+            player->set_look_vector({ packet->look_x, packet->look_y, packet->look_z });
+            player->set_up_vector({ packet->up_x, packet->up_y, packet->up_z });
+        }
+    }
+    break;
+    case S2C_P_ENTER:
+    {
+        sc_packet_enter* packet = reinterpret_cast<sc_packet_enter*>(p);
+        XMFLOAT3 pos = { packet->x, packet->y, packet->z };
+        AITestScene* ai_test_scene = dynamic_cast<AITestScene*>(scene_.get());
+        if (ai_test_scene)
+        {
+            ai_test_scene->AddRemotePlayer(packet->id, packet->name, pos);
+        }
+    }
+    break;
+    case S2C_P_LEAVE:
+    {
+        cs_packet_login* packet = reinterpret_cast<cs_packet_login*>(p);
+        break;
+    }
+    default:
+        break;
+    }
+}
+
+
+void GameFramework::do_recv()
+{
+    DWORD recv_bytes = 0;
+    DWORD flags = 0;
+
+    ZeroMemory(&recv_over_.over, sizeof(recv_over_.over));
+    recv_over_.wsa_buf.buf = recv_over_.buffer;
+    recv_over_.wsa_buf.len = sizeof(recv_over_.buffer);
+    recv_over_.flags = 0;
+
+    WSARecv(socket_, &recv_over_.wsa_buf, 1, &recv_bytes, &recv_over_.flags, &recv_over_.over, nullptr);
+}
+
+void GameFramework::CheckRecv()
+{
+    DWORD bytes = 0;
+    DWORD flags = 0;
+
+    BOOL ret = WSAGetOverlappedResult(socket_, &recv_over_.over, &bytes, FALSE, &flags);
+    if (ret && bytes > 0)
+    {
+        char* buffer = recv_over_.buffer;
+        int total_size = bytes;
+
+        int processed = 0;
+        while (processed < total_size)
+        {
+            unsigned char packet_size = buffer[processed];
+            if (processed + packet_size > total_size) break;
+
+            ProcessPacket(&buffer[processed]);
+            processed += packet_size;
+        }
+
+        do_recv();
+    }
 }

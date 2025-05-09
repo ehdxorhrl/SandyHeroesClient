@@ -143,27 +143,6 @@ void AITestScene::BuildObject(ID3D12Device* device, ID3D12GraphicsCommandList* c
 	object_list_.back().reset(player);
 
 	// AI 테스트용 몬스터
-	Object* monster = model_infos_[0]->GetInstance();
-	monster_ = monster;
-	monster->set_position_vector(XMFLOAT3{ 10, 0, 0 });
-	AnimatorComponent* m_animator = Object::GetComponent<AnimatorComponent>(monster);
-	m_animator->set_animation_state(new PlayerAnimationState);
-	
-	Object* monster_gun_frame = monster_->FindFrame("WeaponR_locator");
-	monster_gun_frame->AddChild(new Object());
-	monster_gun_frame = monster_gun_frame->child();
-	GunComponent* monster_gun = new GunComponent(monster_gun_frame);
-	monster_gun->LoadGunInfo("classic");
-	monster_gun_frame->AddComponent(monster_gun);
-	monster_gun_frame->AddComponent(new MeshComponent(monster_gun_frame, Scene::FindMesh("green_cube", meshes_)));
-	monster_gun_frame->Scale(0.1);
-
-	AIComponent* monster_ai = new AIComponent(monster,player);
-	monster->AddComponent(monster_ai);
-
-
-	object_list_.emplace_back();
-	object_list_.back().reset(monster);
 
 
 	camera_object = new Object;
@@ -390,6 +369,8 @@ void AITestScene::Render(ID3D12GraphicsCommandList* command_list)
 		}
 
 	}
+
+
 }
 
 bool AITestScene::ProcessInput(UINT id, WPARAM w_param, LPARAM l_param, float time)
@@ -434,4 +415,50 @@ bool AITestScene::ProcessInput(UINT id, WPARAM w_param, LPARAM l_param, float ti
 		return false;
 		break;
 	}
+}
+
+void AITestScene::AddRemotePlayer(int id, const std::string& name, const XMFLOAT3& pos)
+{
+	//Object* remote = model_infos_[0]->GetInstance();
+	//
+	//remote_ = remote;
+	//
+	//remote->set_position_vector(pos);
+	//remote->set_name(name);
+	//remote->set_id(id);
+	//
+	//AnimatorComponent* animator = Object::GetComponent<AnimatorComponent>(remote);
+	//animator->set_animation_state(new PlayerAnimationState);
+	//
+	//Object* remote_gun_frame = remote->FindFrame("WeaponR_locator");
+	//remote_gun_frame->AddChild(new Object());
+	//remote_gun_frame = remote_gun_frame->child();
+	//GunComponent* remote_gun = new GunComponent(remote_gun_frame);
+	//remote_gun->LoadGunInfo("classic");
+	//remote_gun_frame->AddComponent(remote_gun);
+	//remote_gun_frame->AddComponent(new MeshComponent(remote_gun_frame, Scene::FindMesh("green_cube", meshes_)));
+	//remote_gun_frame->Scale(0.1);
+	//
+	//object_list_.emplace_back();
+	//object_list_.back().reset(remote);
+
+	Object* monster = model_infos_[0]->GetInstance();
+
+	monster->set_position_vector(XMFLOAT3{ 0, 0, 10 });
+	AnimatorComponent* m_animator = Object::GetComponent<AnimatorComponent>(monster);
+	m_animator->set_animation_state(new PlayerAnimationState);
+
+	Object* monster_gun_frame = monster->FindFrame("WeaponR_locator");
+	monster_gun_frame->AddChild(new Object());
+	monster_gun_frame = monster_gun_frame->child();
+	GunComponent* monster_gun = new GunComponent(monster_gun_frame);
+	monster_gun->LoadGunInfo("classic");
+	monster_gun_frame->AddComponent(monster_gun);
+	monster_gun_frame->AddComponent(new MeshComponent(monster_gun_frame, Scene::FindMesh("green_cube", meshes_)));
+	monster_gun_frame->Scale(0.1);
+
+
+	object_list_.emplace_back();
+	object_list_.back().reset(monster);
+
 }
