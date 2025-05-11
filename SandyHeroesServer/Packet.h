@@ -1,4 +1,5 @@
 #pragma once
+#include "stdafx.h"
 //version 0.1   버전은 항상 바꿔줄 것
 
 // 서버 주소와 포트는 나중에 입력받는식으로 수정
@@ -28,22 +29,13 @@ struct sc_packet_user_info { // 서버에서 돌린 루프로 추출한 object에 대한 정보를
 	char type;
 	long long  id;
 	float x, y, z;
-	short hp;
 };
 
-struct sc_packet_move { // 
+struct sc_packet_move {
 	unsigned char size;
 	char type;
 	long long id;
-	float x, y, z;
-};
-
-struct sc_packet_rotate{
-	unsigned char size;
-	char type;
-	long long id;
-	float look_x, look_y, look_z;
-	float up_x, up_y, up_z;
+	float matrix[16];
 };
 
 struct sc_packet_enter {
@@ -51,8 +43,7 @@ struct sc_packet_enter {
 	char type;
 	long long  id;
 	char name[MAX_ID_LENGTH];
-	char o_type;
-	float x, y, z;
+	float matrix[16];
 };
 
 struct sc_packet_leave {
@@ -69,16 +60,14 @@ struct cs_packet_login {
 struct cs_packet_keyboard_input {
 	unsigned char  size;
 	char  type;
-	long long  id;
 	unsigned char key;
-	unsigned char pressed;
+	bool is_down;
 };
 
 struct cs_packet_mouse_move {
 	unsigned char  size;
 	char  type;
-	long long  id;
-	int dx, dy;
+	float yaw;
 };
 
 

@@ -27,6 +27,8 @@ private:
 	std::atomic<int> new_id_ = 0;
 	EXP_OVER accept_over_{ IO_ACCEPT };
 	std::vector <std::thread> workers_;
+	std::chrono::steady_clock::time_point last_send_time_;
+	const std::chrono::milliseconds send_interval_{ 100 };
 	//std::unique_ptr<Scene> scene_ = nullptr;
 
 };

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Object.h"
 #include "TestControllerComponent.h"
+#include "GameFramework.h"
 
 TestControllerComponent::TestControllerComponent(Object* owner)
 	: InputControllerComponent(owner)
@@ -24,15 +25,6 @@ bool TestControllerComponent::ProcessInput(UINT message_id, WPARAM w_param, LPAR
 {
 	switch (message_id)
 	{
-	case WM_MOUSEMOVE:
-		if (is_key_down_[VK_LBUTTON])
-		{
-			int x = LOWORD(l_param), y = HIWORD(l_param);
-			owner_->Rotate((y - mouse_xy_.y) * 0.1, (x - mouse_xy_.x) * 0.1, 0.f);
-			mouse_xy_.x = x;
-			mouse_xy_.y = y;
-		}
-		break;
 	case WM_LBUTTONDOWN:
 		if (!is_key_down_[VK_LBUTTON])
 		{

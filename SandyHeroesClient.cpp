@@ -7,8 +7,11 @@
 
 #define MAX_LOADSTRING 100
 
-#define GET_X_LPARAM(lp) ((int)(short)LOWORD(lp))
-#define GET_Y_LPARAM(lp) ((int)(short)HIWORD(lp))
+POINT mouse_{ 0,0 };
+POINT center;
+RECT client_rect;
+int x, y;
+
 
 // 전역 변수:
 HINSTANCE hInst;                                // 현재 인스턴스입니다.
@@ -148,35 +151,43 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if (message == WM_KEYDOWN || message == WM_KEYUP)
-    {
-        cs_packet_keyboard_input packet{};
-        packet.size = sizeof(packet);
-        packet.type = C2S_P_KEYBOARD_INPUT;
-        packet.key = static_cast<unsigned char>(wParam);
-        packet.pressed = (message == WM_KEYDOWN) ? 1 : 0;
-        game_framework.do_send(&packet);
-    }
-    else if (message == WM_MOUSEMOVE)
-    {
-        static POINT last_mouse_pos = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-        int curr_x = GET_X_LPARAM(lParam);
-        int curr_y = GET_Y_LPARAM(lParam);
-        int dx = curr_x - last_mouse_pos.x;
-        int dy = curr_y - last_mouse_pos.y;
-        last_mouse_pos.x = curr_x;
-        last_mouse_pos.y = curr_y;
-
-        cs_packet_mouse_move packet{};
-        packet.size = sizeof(packet);
-        packet.type = C2S_P_MOUSE_MOVE;
-        packet.dx = dx;
-        packet.dy = dy;
-        game_framework.do_send(&packet);
-    }
 
     switch (message)
     {
+    case WM_SIZE:
+    case WM_LBUTTONDOWN:
+    case WM_LBUTTONUP:
+    case WM_RBUTTONDOWN:
+    case WM_RBUTTONUP:
+        game_framework.ProcessWindowMessage(hWnd, message, wParam, lParam);
+        break;
+    case WM_KEYDOWN:
+        if(wParam != VK_ESCAPE)
+            game_framework.send_keyboard_input_packet(wParam, true);
+        else
+            game_framework.ProcessWindowMessage(hWnd, message, wParam, lParam);
+        break;
+    case WM_KEYUP:
+        if (wParam != VK_ESCAPE)
+            game_framework.send_keyboard_input_packet(wParam, false);
+        else
+            game_framework.ProcessWindowMessage(hWnd, message, wParam, lParam);
+        break;
+    case WM_MOUSEMOVE:
+        GetCursorPos(&mouse_);
+
+        GetClientRect(hWnd, &client_rect);
+
+        center.x = (client_rect.right - client_rect.left) / 2;
+        center.y = (client_rect.bottom - client_rect.top) / 2;
+
+        ClientToScreen(hWnd, &center);
+
+        // 입력 값 보내기
+        game_framework.send_mouse_move_packet(mouse_.x, center.x); // pitch, yaw
+
+        SetCursorPos(center.x, center.y); // 다시 중앙으로 커서 이동
+        break;
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);

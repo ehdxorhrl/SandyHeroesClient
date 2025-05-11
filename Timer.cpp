@@ -73,10 +73,10 @@ void Timer::Stop()
     if (!is_stop_)
     {
         is_stop_ = true;
-
+    
         __int64 curr_time;
         QueryPerformanceCounter((LARGE_INTEGER*)&curr_time);
-
+    
         stop_time_ = curr_time;
     }
 }

@@ -1,6 +1,5 @@
 #pragma once
 
-
 class Timer;
 class Scene;
 class FrameResourceManager;
@@ -63,8 +62,8 @@ public:
 	void ConnectServer();
 	//패킷 전송
 	void send_login_packet();
-	void send_mouse_move_packet();
-	void send_keyboard_input_packet();
+	void send_mouse_move_packet(int x1, int x2);
+	void send_keyboard_input_packet(WPARAM w_param, bool is_press);
 	void ProcessPacket(char* p);
 	void do_recv();
 	void CheckRecv();
@@ -129,6 +128,8 @@ private:
 	std::unique_ptr<DescriptorManager> descriptor_manager_ = nullptr;
 	std::unique_ptr<InputManager> input_manager_ = nullptr;
 
+	std::chrono::steady_clock::time_point last_mouse_packet_time_;
+	const std::chrono::milliseconds mouse_packet_interval_{ 7 }; // 약 30fps
 	bool is_initialized_ = false;
 private:
 	SOCKET socket_;

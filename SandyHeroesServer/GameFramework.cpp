@@ -67,6 +67,24 @@ void GameFramework::FrameAdvance()
     //인풋 처리
     ProcessInput();
 
+    const auto& users = SessionManager::getInstance().getAllSessions();
+
+    for (auto& u : users)
+    {
+        u.second->update(server_timer_->ElapsedTime());
+        
+    }
+
+    auto now = std::chrono::steady_clock::now();
+    if (now - last_send_time_ >= send_interval_)
+    {
+        for (auto& u : users)
+        {
+            u.second->send_player_position();
+        }
+        last_send_time_ = now;
+    }
+   
     //충돌처리
     //scene_->CheckObjectByObjectCollisions();
 
@@ -87,12 +105,14 @@ void GameFramework::do_accept(SOCKET s_socket, EXP_OVER* accept_over)
 
 void GameFramework::ProcessInput()
 {
-    //먼저 Scene에서 인풋을 처리하는지 확인한다
-    //if (scene_)
+    //const auto& users = SessionManager::getInstance().getAllSessions();
+
+    //for (auto& u : users)
     //{
-    //    if (scene_->ProcessInput(id, w_param, l_param, time))
-    //        return;
+    // 
+    //    u.second->do_recv();
     //}
+
 }
 
 void GameFramework::worker()
@@ -121,23 +141,15 @@ void GameFramework::worker()
 		case IO_ACCEPT:
 		{
             int new_id = new_id_++;
-
-            // 소켓을 IOCP에 등록
             CreateIoCompletionPort(reinterpret_cast<HANDLE>(eo->accept_socket_),
                 hIOCP_, new_id, 0);
-
-            // ❗ AcceptEx로 받은 소켓에 대해 컨텍스트 업데이트
-            setsockopt(eo->accept_socket_, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
-                (char*)&socket_, sizeof(socket_));
-
-            // 세션 생성 및 등록
+            //setsockopt(eo->accept_socket_, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+            //    (char*)&socket_, sizeof(socket_));
             auto session = std::make_shared<Session>(new_id, eo->accept_socket_);
             SessionManager::getInstance().add(new_id, session);
 
-            // 이제 안전하게 수신 시작 가능
             session->do_recv();
 
-            // 다음 클라이언트 수신 대기
             do_accept(socket_, &accept_over_);
 		}
 		break;
@@ -160,7 +172,7 @@ void GameFramework::worker()
                 unsigned char packet_size = *p;
                 if (p + packet_size > eo->buffer_ + data_size)
                     break;
-                session->process_packet(p);
+                session->process_packet(p, server_timer_->ElapsedTime());
                 p = p + packet_size;
             }
 

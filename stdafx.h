@@ -33,6 +33,7 @@
 #include <limits>
 #include <sstream>
 #include <numeric>
+#include <chrono>
 
 // DirectX 관련 헤더 파일 및 선언문
 #include <wrl.h>

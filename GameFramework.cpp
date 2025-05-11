@@ -374,11 +374,11 @@ void GameFramework::OnResize()
 
 void GameFramework::ProcessInput()
 {
-    //while (!input_manager_->IsEmpty())
-    //{
-    //    InputMessage message = input_manager_->DeQueueInputMessage(client_timer_->PlayTime());
-    //    ProcessInput(message.id, message.w_param, message.l_param, message.time);
-    //}
+    while (!input_manager_->IsEmpty())
+    {
+        InputMessage message = input_manager_->DeQueueInputMessage(client_timer_->PlayTime());
+        ProcessInput(message.id, message.w_param, message.l_param, message.time);
+    }
 }
 
 void GameFramework::ProcessInput(UINT id, WPARAM w_param, LPARAM l_param, float time)
@@ -526,7 +526,8 @@ LRESULT GameFramework::ProcessWindowMessage(HWND h_wnd, UINT message_id, WPARAM 
     case WM_RBUTTONDOWN:
     case WM_LBUTTONUP:
     case WM_RBUTTONUP:
-    case WM_MOUSEMOVE:
+        input_manager_->EnQueueInputMessage(message_id, w_param, l_param, client_timer_->PlayTime());
+        break;
     case WM_KEYDOWN:
     case WM_KEYUP:
         input_manager_->EnQueueInputMessage(message_id, w_param, l_param, client_timer_->PlayTime());
@@ -574,7 +575,6 @@ void GameFramework::ConnectServer()
     do_recv();
 }
 
-
 void GameFramework::do_send(void* p)
 {
     unsigned char* packet = reinterpret_cast<unsigned char*>(p);
@@ -595,6 +595,30 @@ void GameFramework::send_login_packet()
     p.size = sizeof(p);
     p.type = C2S_P_LOGIN;
     do_send(&p);
+}
+
+void GameFramework::send_mouse_move_packet(int x1, int x2)
+{
+    auto now = std::chrono::steady_clock::now();
+
+    if (now - last_mouse_packet_time_ < mouse_packet_interval_)
+        return;
+    cs_packet_mouse_move mm;
+    mm.size = sizeof(mm);
+    mm.type = C2S_P_MOUSE_MOVE;
+    mm.yaw = x1 - x2;
+    do_send(&mm);
+    last_mouse_packet_time_ = now;
+}
+
+void GameFramework::send_keyboard_input_packet(WPARAM w_param, bool is_press)
+{
+    cs_packet_keyboard_input ki;
+    ki.size = sizeof(ki);
+    ki.type = C2S_P_KEYBOARD_INPUT;
+    ki.key = w_param;
+    ki.pressed = is_press;
+    do_send(&ki);
 }
 
 
@@ -618,32 +642,31 @@ void GameFramework::ProcessPacket(char* p)
         }
     }
     break;
-
     case S2C_P_MOVE:
     {
         sc_packet_move* packet = reinterpret_cast<sc_packet_move*>(p);
-    }
-    break;
-    case S2C_P_ROTATE:
-    {
-        sc_packet_rotate* packet = reinterpret_cast<sc_packet_rotate*>(p);
         AITestScene* ai_test_scene = dynamic_cast<AITestScene*>(scene_.get());
-        Object* player = ai_test_scene->player(); // BaseScene에 player_ 멤버가 존재함
-        if (player)
+        if (ai_test_scene)
         {
-            player->set_look_vector({ packet->look_x, packet->look_y, packet->look_z });
-            player->set_up_vector({ packet->up_x, packet->up_y, packet->up_z });
+
+            Object* player = ai_test_scene->FindObject(packet->id);
+            if (player && player->id()== packet->id)
+            {
+                XMFLOAT4X4 xf;
+                memcpy(&xf, packet->matrix, sizeof(float) * 16);
+                player->set_transform_matrix(xf);
+            }
         }
+
     }
     break;
     case S2C_P_ENTER:
     {
         sc_packet_enter* packet = reinterpret_cast<sc_packet_enter*>(p);
-        XMFLOAT3 pos = { packet->x, packet->y, packet->z };
         AITestScene* ai_test_scene = dynamic_cast<AITestScene*>(scene_.get());
         if (ai_test_scene)
         {
-            ai_test_scene->AddRemotePlayer(packet->id, packet->name, pos);
+            ai_test_scene->AddRemotePlayer(packet->id, packet->name, XMFLOAT3(packet->x, packet->y, packet->z));
         }
     }
     break;

@@ -26,18 +26,20 @@ private:
 	std::string		name_;
 
 	EXP_OVER		recv_over_{ IO_RECV };
-
 	Object			object_;
+
+	std::unordered_map<char, bool> is_key_down_;
 public:
 	Session();
 	Session(long long session_id, SOCKET s);
 	~Session();
 
+	void update(float elapsed_time);
 	void do_recv();
 	void do_send(void* buff);
 	void send_player_info_packet();
 	void send_player_position();
-	void process_packet(unsigned char* p);
+	void process_packet(unsigned char* p, float elapsed_time);
 
 public:
 	unsigned char	remained_;
